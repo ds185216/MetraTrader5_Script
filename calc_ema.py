@@ -71,7 +71,7 @@ for sym in symbols:
 		DF_L2 = DF_2.combine_first(DF_1min)
 
 		print (sym)
-		
+
 		#EMA and Segment calculations
 		for EMA_A in range (2,11):
 			for EMA_B in range(2,11):
@@ -115,7 +115,7 @@ for sym in symbols:
 		EMA_B = level_2['EMA_B']
 		seg = level_2['seg']
 
-		DF_test = DF_2.copy() #Need to set as definition
+		DF_test = DF_L2.copy() #Need to set as definition
 		DF_test['start'] = DF_test.query('ask>EMA_'+str(EMA_A))['ask']
 		DF_test['buy'] = DF_test['start'].notnull()
 		DF_test['start'] = DF_test['start'].fillna(DF_test.query('ask<EMA_'+str(EMA_B))['ask'])
