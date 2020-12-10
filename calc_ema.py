@@ -40,7 +40,6 @@ for sym in symbols:
 	#Create DataFrames
 	DF = pd.DataFrame(mt5.copy_ticks_range(sym, utc_from, utc_to, mt5.COPY_TICKS_INFO))
 	DF_L2 = pd.DataFrame(mt5.copy_ticks_range(sym, utc_from_L2, utc_to_L2, mt5.COPY_TICKS_INFO))
-	DF_L2
 
 	#Fixes if no entries in data
 	if len(DF) != 0:
@@ -60,13 +59,13 @@ for sym in symbols:
 		DF = DF_2.combine_first(DF_1min)
 
 		#Level 2 DataFrame and and set 1 minute EMA calculations
-		DF_L2 = DF.drop(['volume', 'last', 'time_msc', 'flags', 'volume_real'], axis=1) #Need to set as definition
+		DF_L2 = DF_L2.drop(['volume', 'last', 'time_msc', 'flags', 'volume_real'], axis=1) #Need to set as definition
 		DF_L2.index = pd.to_datetime(DF_L2['time'], unit='s')
 		DF_1min = DF_L2.drop_duplicates(subset='time', keep="first")
 		DF_1min = DF_1min.resample("1min").fillna("ffill").dropna().drop('time', axis=1)
 		for i in range(2,11):
 			DF_1min['EMA_'+str(i)] = DF_1min['ask'].ewm(span=i, min_periods=i).mean()
-		DF_2 = DF.drop_duplicates(subset='time', keep="first")
+		DF_2 = DF_L2.drop_duplicates(subset='time', keep="first")
 		DF_2 = DF_2.drop(['time'], axis=1)
 		DF_L2 = DF_2.combine_first(DF_1min)
 
