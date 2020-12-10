@@ -15,14 +15,14 @@ mt5.initialize()
 
 #Convert dates to UTC
 utc_start = datetime.datetime.utcnow().date()
-utc_finish = utc_start - datetime.timedelta(days=2)
+utc_finish = utc_start - datetime.timedelta(days=1)
 utc_to = dt(int(utc_start.strftime("%Y")), int(utc_start.strftime("%m")), int(utc_start.strftime("%d")))
 utc_from = dt(int(utc_finish.strftime("%Y")), int(utc_finish.strftime("%m")), int(utc_finish.strftime("%d")))
 
 #Second level dates
-utc_start = utc_start - datetime.timedelta(days=4)
-utc_finish = utc_start - datetime.timedelta(days=3)
-utc_to_L2 = dt(int(utc_start.strftime("%Y")), int(utc_start.strftime("%m")), int(utc_start.strftime("%d")))
+utc_start = utc_start - datetime.timedelta(days=1)
+utc_finish = utc_start - datetime.timedelta(days=1)
+utc_to_L2 = utc_from
 utc_from_L2 = dt(int(utc_finish.strftime("%Y")), int(utc_finish.strftime("%m")), int(utc_finish.strftime("%d")))
 
 #Get all symbols
@@ -40,6 +40,7 @@ for sym in symbols:
 	#Create DataFrames
 	DF = pd.DataFrame(mt5.copy_ticks_range(sym, utc_from, utc_to, mt5.COPY_TICKS_INFO))
 	DF_L2 = pd.DataFrame(mt5.copy_ticks_range(sym, utc_from_L2, utc_to_L2, mt5.COPY_TICKS_INFO))
+	DF_L2
 
 	#Fixes if no entries in data
 	if len(DF) != 0:
