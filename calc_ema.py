@@ -44,6 +44,7 @@ for sym in symbols:
 	#Fixes if no entries in data
 	if len(DF) != 0:
 
+
 		#Segments for sl and tp
 		segments = [i * (DF['bid'].max()-DF['bid'].min())/10 for i in range(1,10)]
 
@@ -69,6 +70,8 @@ for sym in symbols:
 		DF_2 = DF_2.drop(['time'], axis=1)
 		DF_L2 = DF_2.combine_first(DF_1min)
 
+		print (sym)
+		
 		#EMA and Segment calculations
 		for EMA_A in range (2,11):
 			for EMA_B in range(2,11):
