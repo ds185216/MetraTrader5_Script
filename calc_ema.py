@@ -4,6 +4,13 @@ import numpy as np
 import datetime
 from datetime import datetime as dt
 
+#open EMA_values if exists
+try:
+	EMA_Values = pd.read_csv('EMA_Values.csv')
+except:
+	EMA_Values = pd.DataFrame()
+
+
 mt5.initialize()
 
 #Convert dates to UTC
@@ -24,7 +31,7 @@ symbols = [sym.name for sym in mt5.symbols_get()]
 #Loop through all symbols
 for sym in symbols:
 
-	#Set value to determine optimum cash
+	#Set value to determine optimum cash after second level
 	max_cash = 1
 
 	#Final list of entries that have a return more than 1
@@ -111,6 +118,7 @@ for sym in symbols:
 		DF_test['start'] = DF_test['start'].fillna(DF_test.query('ask<EMA_'+str(EMA_B))['ask'])
 		cash = 1
 
+		#Check results on level 2
 		while DF_test['start'].count() > 0:
 			if DF_test['buy'][DF_test['start'].first_valid_index()] == True:
 				DF_test['bid_min_max'] = DF_test['bid'].cummax()
@@ -133,10 +141,11 @@ for sym in symbols:
 					break
 			else:
 				break
-		if cash > 1:
-			if level_2['cash'] * cash > max_cash:
-				max_cash = level_2['cash'] * cash
-				holder = {'EMA_A' : EMA_A, 'EMA_B' : EMA_B, 'seg': seg, 'max_cash' : max_cash}
 
-	#DataFrame entry of final values in here...
-	#Use symbol as index
+		#write EMA_Values
+		if cash > 1 and level_2['cash'] * cash > max_cash:
+			max_cash = level_2['cash'] * cash
+			print ('Value found', sym, 'EMA_A:', EMA_A, 'EMA_B:', 'EMA_B', 'TP and SL segments:', seg, '2 day simulated cash:', max_cash)
+			hold = pd.DataFrame({'EMA_A' : EMA_A, 'EMA_B' : EMA_B, 'seg': seg, 'max_cash' : max_cash}, index = [sym])
+			EMA_Values = EMA_Values.append(hold)
+			EMA_Values.to_csv('EMA_Values.csv')
