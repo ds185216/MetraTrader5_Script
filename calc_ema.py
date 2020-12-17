@@ -8,7 +8,7 @@ from datetime import datetime as dt
 try:
 	EMA_Values = pd.read_csv('EMA_Values.csv')
 except:
-	EMA_Values = pd.DataFrame()
+	EMA_Values = pd.DataFrame(columns=['EMA_A','EMA_B','seg','max_cash'])
 
 
 mt5.initialize()
@@ -42,7 +42,7 @@ for sym in symbols:
 	DF_L2 = pd.DataFrame(mt5.copy_ticks_range(sym, utc_from_L2, utc_to_L2, mt5.COPY_TICKS_INFO))
 
 	#Fixes if no entries in data
-	if len(DF) != 0:
+	if len(DF) != 0 and len(DF_L2) != 0:
 
 
 		#Segments for sl and tp
@@ -107,48 +107,49 @@ for sym in symbols:
 					if cash > 1:
 						results_list.append({'EMA_A' : EMA_A, 'EMA_B' : EMA_B, 'seg': seg, 'cash' : cash})
 
+		for level_2 in results_list:
 
-	for level_2 in results_list:
+			#Dictionary values from level 1 tests
+			EMA_A = level_2['EMA_A']
+			EMA_B = level_2['EMA_B']
+			seg = level_2['seg']
 
-		#Dictionary values from level 1 tests
-		EMA_A = level_2['EMA_A']
-		EMA_B = level_2['EMA_B']
-		seg = level_2['seg']
+			DF_test = DF_L2.copy() #Need to set as definition
+			DF_test['start'] = DF_test.query('ask>EMA_'+str(EMA_A))['ask']
+			DF_test['buy'] = DF_test['start'].notnull()
+			DF_test['start'] = DF_test['start'].fillna(DF_test.query('ask<EMA_'+str(EMA_B))['ask'])
+			cash = 1
 
-		DF_test = DF_L2.copy() #Need to set as definition
-		DF_test['start'] = DF_test.query('ask>EMA_'+str(EMA_A))['ask']
-		DF_test['buy'] = DF_test['start'].notnull()
-		DF_test['start'] = DF_test['start'].fillna(DF_test.query('ask<EMA_'+str(EMA_B))['ask'])
-		cash = 1
-
-		#Check results on level 2
-		while DF_test['start'].count() > 0:
-			if DF_test['buy'][DF_test['start'].first_valid_index()] == True:
-				DF_test['bid_min_max'] = DF_test['bid'].cummax()
-				DF_test['sl'] = DF_test['bid_min_max']-seg
-				DF_test['tp'] = DF_test['start'].loc[DF_test['start'].first_valid_index()]+seg
-			else:
-				DF_test['bid_min_max'] = DF_test['bid'].cummin()
-				DF_test['sl'] = DF_test['bid_min_max']+seg
-				DF_test['tp'] = DF_test['start'].loc[DF_test['start'].first_valid_index()]-seg
-			DF_test['stop'] = DF_test.query('tp<bid or sl>bid')['bid']
-			start = DF_test['start'][DF_test['start'].first_valid_index()]
-			if DF_test['stop'].count() > 0:
-				stop = DF_test['stop'][DF_test['stop'].first_valid_index()]
+			#Check results on level 2
+			while DF_test['start'].count() > 0:
 				if DF_test['buy'][DF_test['start'].first_valid_index()] == True:
-					cash = cash * (stop/start)
+					DF_test['bid_min_max'] = DF_test['bid'].cummax()
+					DF_test['sl'] = DF_test['bid_min_max']-seg
+					DF_test['tp'] = DF_test['start'].loc[DF_test['start'].first_valid_index()]+seg
 				else:
-					cash = cash + (cash * (1-(stop/start)))
-				DF_test.drop(DF_test.loc[DF_test.index <= DF_test['stop'].first_valid_index()].index, inplace=True)
-				if cash < 0.9:
+					DF_test['bid_min_max'] = DF_test['bid'].cummin()
+					DF_test['sl'] = DF_test['bid_min_max']+seg
+					DF_test['tp'] = DF_test['start'].loc[DF_test['start'].first_valid_index()]-seg
+				DF_test['stop'] = DF_test.query('tp<bid or sl>bid')['bid']
+				start = DF_test['start'][DF_test['start'].first_valid_index()]
+				if DF_test['stop'].count() > 0:
+					stop = DF_test['stop'][DF_test['stop'].first_valid_index()]
+					if DF_test['buy'][DF_test['start'].first_valid_index()] == True:
+						cash = cash * (stop/start)
+					else:
+						cash = cash + (cash * (1-(stop/start)))
+					DF_test.drop(DF_test.loc[DF_test.index <= DF_test['stop'].first_valid_index()].index, inplace=True)
+					if cash < 0.9:
+						break
+				else:
 					break
-			else:
-				break
 
-		#write EMA_Values
-		if cash > 1 and level_2['cash'] * cash > max_cash:
-			max_cash = level_2['cash'] * cash
-			print ('Value found', sym, 'EMA_A:', EMA_A, 'EMA_B:', 'EMA_B', 'TP and SL segments:', seg, '2 day simulated cash:', max_cash)
-			hold = pd.DataFrame({'EMA_A' : EMA_A, 'EMA_B' : EMA_B, 'seg': seg, 'max_cash' : max_cash}, index = [sym])
-			EMA_Values = EMA_Values.append(hold)
-			EMA_Values.to_csv('EMA_Values.csv')
+			#write EMA_Values
+			if cash > 1 and level_2['cash'] * cash > max_cash:
+				max_cash = level_2['cash'] * cash
+				print ('Value found', sym, 'EMA_A:', EMA_A, 'EMA_B:', EMA_B, 'TP and SL segments:', seg, '2 day simulated cash:', max_cash)
+				EMA_Values.loc[sym]=EMA_A, EMA_B, seg, max_cash
+				EMA_Values.to_csv('EMA_Values.csv')
+
+	else:
+		print ('Not enough data found')
