@@ -148,7 +148,7 @@ for sym in symbols:
 			if cash > 1 and level_2['cash'] * cash > max_cash:
 				max_cash = level_2['cash'] * cash
 				print ('Value found', sym, 'EMA_A:', EMA_A, 'EMA_B:', EMA_B, 'TP and SL segments:', seg, '2 day simulated cash:', max_cash)
-				EMA_Values.loc[sym]=EMA_A, EMA_B, seg, max_cash
+				EMA_Values.loc[sym] = {'EMA_A' : EMA_A, 'EMA_B' : EMA_B, 'seg' : seg, 'max_cash' : max_cash}
 				EMA_Values.to_csv('EMA_Values.csv')
 
 	else:
