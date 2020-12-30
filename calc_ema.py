@@ -144,11 +144,12 @@ for sym in symbols:
 				DF_test['bid_min_max'] = DF_test['bid'].cummax()
 				DF_test['sl'] = DF_test['bid_min_max']-seg
 				DF_test['tp'] = DF_test['start'].loc[DF_test['start'].first_valid_index()]+seg
+				DF_test['stop'] = DF_test.query('tp<bid or sl>bid')['bid']
 			else:
 				DF_test['bid_min_max'] = DF_test['bid'].cummin()
 				DF_test['sl'] = DF_test['bid_min_max']+seg
 				DF_test['tp'] = DF_test['start'].loc[DF_test['start'].first_valid_index()]-seg
-			DF_test['stop'] = DF_test.query('tp<bid or sl>bid')['bid']
+				DF_test['stop'] = DF_test.query('tp>bid or sl<bid')['bid']
 			start = DF_test['start'][DF_test['start'].first_valid_index()]
 			if DF_test['stop'].count() > 0:
 				stop = DF_test['stop'][DF_test['stop'].first_valid_index()]
