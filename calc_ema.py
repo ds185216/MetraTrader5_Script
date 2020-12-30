@@ -56,7 +56,7 @@ for sym in symbols:
 		DF = pd.DataFrame(mt5.copy_ticks_range(sym, utc_from, utc_to, mt5.COPY_TICKS_INFO))
 		DF_L2 = pd.DataFrame(mt5.copy_ticks_range(sym, utc_from_L2, utc_to_L2, mt5.COPY_TICKS_INFO))
 		if len(DF) > 0 and len(DF_L2) > 0:
-			
+
 			#Segments for sl and tp
 			segments = [round((i * (DF['bid'].max()-DF['bid'].min())/10), digits) for i in range(1,6)]
 
@@ -166,5 +166,6 @@ for sym in symbols:
 					print ('Value found', sym, 'EMA_A:', EMA_A, 'EMA_B:', EMA_B, 'TP and SL segments:', seg, '2 day simulated cash:', max_cash)
 					EMA_Values.loc[sym] = {'EMA_A' : EMA_A, 'EMA_B' : EMA_B, 'seg' : seg, 'max_cash' : max_cash}
 					EMA_Values.to_csv('EMA_Values.csv')
-
+		if backdate == 30:
+			break
 
