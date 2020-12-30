@@ -4,7 +4,7 @@ import numpy as np
 import datetime
 from datetime import datetime as dt
 
-#Open ema values file
+#Open EMA values file
 try:
 	EMA_Values = pd.read_csv('EMA_Values.csv')
 	EMA_Values = EMA_Values.sort_values(by=['max_cash'], ascending=False)
@@ -20,7 +20,7 @@ percent = 10
 mt5.initialize()
 
 
-While True:
+while True:
 
 	#Open orders check
 	open_sym = []
@@ -29,18 +29,19 @@ While True:
 		DF = pd.DataFrame(mt5.copy_ticks_from(order.symbol, (dt.today()), 100000, mt5.COPY_TICKS_ALL))
 		DF = DF[DF['time'] >= order.time]
 		if order.type == 0:
-			change_sl = DF['ask'].max() - float(EMA_Values.loc[order.symbol]['seg'])
+			change_sl = round(DF['bid'].max() - float(EMA_Values.loc[order.symbol]['seg']), mt5.symbol_info(order.symbol).digits)
 		if order.type == 1:
-			change_sl = DF['ask'].min() + float(EMA_Values.loc[order.symbol]['seg'])
+			change_sl = round(DF['bid'].min() + float(EMA_Values.loc[order.symbol]['seg']), mt5.symbol_info(order.symbol).digits)
 		#Change sl
 		request = {
 			"action": mt5.TRADE_ACTION_SLTP,
 			"position": order.ticket,
+			"tp" : order.tp,
 			"sl" : change_sl,
 			}
 		result = mt5.order_send(request)
 		if result.retcode == 10009:
-			print (order.symbol, 'tp changed', change_sl)
+			print (order.symbol, 'sl changed', change_sl)
 
 	#Check current EMA values
 	for sym in symbols:
@@ -61,14 +62,17 @@ While True:
 
 			#Qualify for Buy/Sell
 			if DF.tail(1)['ask'][0] > DF.tail(1)['EMA_A'][0]:
+				volume = round(int(((mt5.account_info().balance/100)*percent)/DF.tail(1)['ask'][0]/mt5.symbol_info(sym).volume_step)*mt5.symbol_info(sym).volume_step, mt5.account_info().currency_digits)
+				if volume > mt5.symbol_info(sym).volume_max:
+					volume = mt5.symbol_info(sym).volume_max
 				request = {
 					"action": mt5.TRADE_ACTION_DEAL,
 					"symbol": sym,
-					"volume": round(int(((mt5.account_info().balance/100)*percent)/DF.tail(1)['ask'][0]/mt5.symbol_info(sym).volume_step)*mt5.symbol_info(sym).volume_step, mt5.account_info().currency_digits),
+					"volume": volume,
 					"type": mt5.ORDER_TYPE_BUY,
 					"price": DF.tail(1)['ask'][0],
-					"sl": DF.tail(1)['ask'][0] - seg,
-					"tp": DF.tail(1)['ask'][0] + seg,
+					"sl": round(DF.tail(1)['bid'][0] - seg, mt5.symbol_info(sym).digits),
+					"tp": round(DF.tail(1)['ask'][0] + seg, mt5.symbol_info(sym).digits), #fixes where tp was set lower than ask price for a few orders
 					"deviation": 0,
 					"magic": 0,
 					"comment": "Python script",
@@ -80,17 +84,22 @@ While True:
 					print ('Buy', sym)
 				else:
 					print ('Buy Error:', result.retcode)
+					print (request)
 				break
 
 			elif DF.tail(1)['ask'][0] < DF.tail(1)['EMA_B'][0]:
+				volume = round(int(((mt5.account_info().balance/100)*percent)/DF.tail(1)['ask'][0]/mt5.symbol_info(sym).volume_step)*mt5.symbol_info(sym).volume_step, mt5.account_info().currency_digits)
+				round_amount = len(str(DF.tail(1)['ask'][0]).split('.')[1])				
+				if volume > mt5.symbol_info(sym).volume_max:
+					volume = mt5.symbol_info(sym).volume_max				
 				request = {
 					"action": mt5.TRADE_ACTION_DEAL,
 					"symbol": sym,
-					"volume": round(int(((mt5.account_info().balance/100)*percent)/DF.tail(1)['ask'][0]/mt5.symbol_info(sym).volume_step)*mt5.symbol_info(sym).volume_step, mt5.account_info().currency_digits),
+					"volume": volume,
 					"type": mt5.ORDER_TYPE_SELL,
 					"price": DF.tail(1)['ask'][0],
-					"sl": DF.tail(1)['ask'][0] + seg,
-					"tp": DF.tail(1)['ask'][0] - seg,
+					"sl": round(DF.tail(1)['bid'][0] + seg, mt5.symbol_info(sym).digits),
+					"tp": round(DF.tail(1)['ask'][0] - seg, mt5.symbol_info(sym).digits), #fixes where tp was set lower than ask price for a few orders
 					"deviation": 0,
 					"magic": 0,
 					"comment": "Python script",
@@ -102,4 +111,5 @@ While True:
 					print ('Sell', sym)
 				else:
 					print ('Sell Error:', result.retcode)
+					print (request)
 				break
