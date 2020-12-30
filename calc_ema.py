@@ -41,7 +41,7 @@ for sym in symbols:
 
 	#Fixes for no entries in data
 	backdate = 0
-	while len(DF) == 0 and len(DF_L2) == 0:
+	for backdate in range(31):
 		#Convert dates to UTC
 		utc_start = datetime.datetime.utcnow().date() - datetime.timedelta(days=backdate)
 		utc_finish = utc_start - datetime.timedelta(days=1)
@@ -55,10 +55,10 @@ for sym in symbols:
 		utc_from_L2 = dt(int(utc_finish.strftime("%Y")), int(utc_finish.strftime("%m")), int(utc_finish.strftime("%d")))
 		DF = pd.DataFrame(mt5.copy_ticks_range(sym, utc_from, utc_to, mt5.COPY_TICKS_INFO))
 		DF_L2 = pd.DataFrame(mt5.copy_ticks_range(sym, utc_from_L2, utc_to_L2, mt5.COPY_TICKS_INFO))
-		backdate +=1
-		if backdate > 30:
-			print ('Invalid symbol')
+		if len(DF) > 0 and len(DF_L2) > 0:
 			break
+		if backdate == 30:
+			print ('No data found')
 
 	#Segments for sl and tp
 	segments = [round((i * (DF['bid'].max()-DF['bid'].min())/10), digits) for i in range(1,6)]
