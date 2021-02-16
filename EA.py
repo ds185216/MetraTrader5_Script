@@ -51,18 +51,19 @@ while True:
 			EMA_A = int(EMA_Values.loc[sym]['EMA_A'])
 			EMA_B = int(EMA_Values.loc[sym]['EMA_B'])
 			seg = float(EMA_Values.loc[sym]['seg'])
+			sample = EMA_Values.loc[sym]['sample']
 			DF = DF.iloc[::-1]
 			DF.index = pd.to_datetime(DF['time'], unit='s')
 			DF = DF.drop(['volume', 'last', 'time_msc', 'flags', 'volume_real'], axis=1)
 			DF.index = pd.to_datetime(DF['time'], unit='s')
 			DF = DF.drop_duplicates(subset='time', keep="first")
-			DF = DF.resample("1min").fillna("ffill").dropna().drop('time', axis=1)
+			DF = DF.resample(sample).fillna("ffill").dropna().drop('time', axis=1)
 			DF['EMA_A'] = DF['ask'].ewm(span=EMA_A, min_periods=EMA_A).mean()
 			DF['EMA_B'] = DF['ask'].ewm(span=EMA_B, min_periods=EMA_B).mean()
 
 			#Qualify for Buy/Sell
 			if DF.tail(1)['ask'][0] > DF.tail(1)['EMA_A'][0]:
-				volume = round(int(((mt5.account_info().balance/100)*percent)/DF.tail(1)['ask'][0]/mt5.symbol_info(sym).volume_step)*mt5.symbol_info(sym).volume_step, mt5.account_info().currency_digits)
+				volume = round(int(((mt5.account_info().balance/100)*percent)/mt5.symbol_info(sym).bid/mt5.symbol_info(sym).volume_step)*mt5.symbol_info(sym).volume_step, mt5.symbol_info(sym).digits)
 				if volume > mt5.symbol_info(sym).volume_max:
 					volume = mt5.symbol_info(sym).volume_max
 				request = {
@@ -70,9 +71,9 @@ while True:
 					"symbol": sym,
 					"volume": volume,
 					"type": mt5.ORDER_TYPE_BUY,
-					"price": DF.tail(1)['ask'][0],
-					"sl": round(DF.tail(1)['bid'][0] - seg, mt5.symbol_info(sym).digits),
-					"tp": round(DF.tail(1)['ask'][0] + seg, mt5.symbol_info(sym).digits), #fixes where tp was set lower than ask price for a few orders
+					"price": mt5.symbol_info(sym).bid,
+					"sl": round(mt5.symbol_info(sym).bid - seg, mt5.symbol_info(sym).digits),
+					"tp": round(mt5.symbol_info(sym).ask + seg, mt5.symbol_info(sym).digits),
 					"deviation": 0,
 					"magic": 0,
 					"comment": "Python script",
@@ -85,10 +86,11 @@ while True:
 				else:
 					print ('Buy Error:', result.retcode)
 					print (request)
+					print ('bid:', mt5.symbol_info(sym).bid)
 				break
 
 			elif DF.tail(1)['ask'][0] < DF.tail(1)['EMA_B'][0]:
-				volume = round(int(((mt5.account_info().balance/100)*percent)/DF.tail(1)['ask'][0]/mt5.symbol_info(sym).volume_step)*mt5.symbol_info(sym).volume_step, mt5.account_info().currency_digits)
+				volume = round(int(((mt5.account_info().balance/100)*percent)/mt5.symbol_info(sym).bid/mt5.symbol_info(sym).volume_step)*mt5.symbol_info(sym).volume_step, mt5.symbol_info(sym).digits)
 				round_amount = len(str(DF.tail(1)['ask'][0]).split('.')[1])				
 				if volume > mt5.symbol_info(sym).volume_max:
 					volume = mt5.symbol_info(sym).volume_max				
@@ -97,9 +99,9 @@ while True:
 					"symbol": sym,
 					"volume": volume,
 					"type": mt5.ORDER_TYPE_SELL,
-					"price": DF.tail(1)['ask'][0],
-					"sl": round(DF.tail(1)['bid'][0] + seg, mt5.symbol_info(sym).digits),
-					"tp": round(DF.tail(1)['ask'][0] - seg, mt5.symbol_info(sym).digits), #fixes where tp was set lower than ask price for a few orders
+					"price": mt5.symbol_info(sym).bid,
+					"sl": round(mt5.symbol_info(sym).bid + seg, mt5.symbol_info(sym).digits),#Need to fix return errors, something to do with use of bid price then ask price at close?
+					"tp": round(mt5.symbol_info(sym).ask - seg, mt5.symbol_info(sym).digits),
 					"deviation": 0,
 					"magic": 0,
 					"comment": "Python script",
@@ -112,4 +114,5 @@ while True:
 				else:
 					print ('Sell Error:', result.retcode)
 					print (request)
+					print ('bid:', mt5.symbol_info(sym).bid, 'seg:', seg)
 				break
