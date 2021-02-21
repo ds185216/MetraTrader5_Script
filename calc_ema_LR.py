@@ -7,18 +7,18 @@ from sklearn.linear_model import LinearRegression
 
 #open LR_values if exists
 try:
-	EMA_Values = pd.read_csv('LR_Values.csv')
-	EMA_Values.index = EMA_Values['Unnamed: 0']
-	EMA_Values = EMA_Values.drop(['Unnamed: 0'], axis=1)
+	LR_Values = pd.read_csv('LR_Values.csv')
+	LR_Values.index = LR_Values['Unnamed: 0']
+	LR_Values = LR_Values.drop(['Unnamed: 0'], axis=1)
 except:
-	EMA_Values = pd.DataFrame(columns=['LinReg','sample', 'seg','max_cash'])
+	LR_Values = pd.DataFrame(columns=['LinReg','sample', 'seg','max_cash'])
 
 
 mt5.initialize()
 
 #Get all symbols
 #symbols = [sym.name for sym in mt5.symbols_get()] #revert later
-#symbols = [i for i in symbols if i not in EMA_Values.index] #revert later
+#symbols = [i for i in symbols if i not in LR_Values.index] #revert later
 
 symbols = ['BTCUSD', 'ETHUSD', 'BCHUSD', 'XRPUSD', 'LTCUSD']
 
@@ -73,14 +73,15 @@ for sym in symbols:
 				DF_1min = DF.drop_duplicates(subset='time', keep="first")
 				DF_1min = DF_1min.resample(sample).fillna("ffill").dropna().drop('time', axis=1)
 				for LinReg in range(2,10):
+					DF_1min['LinReg_B_'+str(LinReg)] = np.nan
 					for size in range(len(DF_1min)-LinReg):
 						y = pd.DataFrame(DF_1min['ask'][size:size+LinReg])
 						X = pd.DataFrame(range(size, size+LinReg))
 						model = LinearRegression()
 						model.fit(X,y)
 						pred_B = model.predict([[size+LinReg+2]])
-						DF_1min['LinReg_B_'+str(LinReg)] = pred_B[0][0]
-						DF_1min['LinReg_A_'+str(LinReg)] = DF_1min['LinReg_B_'+str(LinReg)].shift(-1)
+						DF_1min['LinReg_B_'+str(LinReg)][size+LinReg] = pred_B[0][0]
+					DF_1min['LinReg_A_'+str(LinReg)] = DF_1min['LinReg_B_'+str(LinReg)].shift(-1)
 				DF_2 = DF.drop_duplicates(subset='time', keep="first")
 				DF_2 = DF_2.drop(['time'], axis=1)
 				DF = DF_2.combine_first(DF_1min)
@@ -93,14 +94,15 @@ for sym in symbols:
 				DF_1min = DF_L2.drop_duplicates(subset='time', keep="first")
 				DF_1min = DF_1min.resample(sample).fillna("ffill").dropna().drop('time', axis=1)
 				for LinReg in range(2,10):
+					DF_1min['LinReg_B_'+str(LinReg)] = np.nan
 					for size in range(len(DF_1min)-LinReg):
 						y = pd.DataFrame(DF_1min['ask'][size:size+LinReg])
 						X = pd.DataFrame(range(size, size+LinReg))
 						model = LinearRegression()
 						model.fit(X,y)
 						pred_B = model.predict([[size+LinReg+2]])
-						DF_1min['LinReg_B_'+str(LinReg)] = pred_B[0][0]
-						DF_1min['LinReg_A_'+str(LinReg)] = DF_1min['LinReg_B_'+str(LinReg)].shift(-1)
+						DF_1min['LinReg_B_'+str(LinReg)][size+LinReg] = pred_B[0][0]
+					DF_1min['LinReg_A_'+str(LinReg)] = DF_1min['LinReg_B_'+str(LinReg)].shift(-1)
 				DF_2 = DF_L2.drop_duplicates(subset='time', keep="first")
 				DF_2 = DF_2.drop(['time'], axis=1)
 				DF_L2 = DF_2.combine_first(DF_1min)
@@ -111,7 +113,7 @@ for sym in symbols:
 			print (sym)
 
 			#EMA and Segment calculations
-			for LinReg in range (2,10):
+			for LinReg in range(2,10):
 				for seg in segments:
 					for sample in sample_rates:
 						DF_test = databases[sample] #Need to set as definition
@@ -184,12 +186,12 @@ for sym in symbols:
 					else:
 						break
 
-				#write EMA_Values
+				#write LR_Values
 				if cash > 1000.00 and (level_2['cash']/1000) * cash > max_cash:
 					max_cash = (level_2['cash']/1000) * cash
 					print ('Value found', sym, 'LinReg:', LinReg, 'sample rate:', sample, 'TP and SL segments:', seg, '2 day simulated cash:', max_cash)
-					EMA_Values.loc[sym] = {'LinReg' : LinReg, 'sample' : sample, 'seg' : seg, 'max_cash' : max_cash}
-					EMA_Values.to_csv('LR_Values.csv')
+					LR_Values.loc[sym] = {'LinReg' : LinReg, 'sample' : sample, 'seg' : seg, 'max_cash' : max_cash}
+					LR_Values.to_csv('LR_Values.csv')
 			break
 		if backdate == 30:
 			break
