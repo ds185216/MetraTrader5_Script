@@ -17,14 +17,14 @@ except:
 mt5.initialize()
 
 #Get all symbols
-#symbols = [sym.name for sym in mt5.symbols_get()] #revert later
-#symbols = [i for i in symbols if i not in LR_Values.index] #revert later
+symbols = [sym.name for sym in mt5.symbols_get()]
 
-symbols = ['BTCUSD', 'ETHUSD', 'BCHUSD', 'XRPUSD', 'LTCUSD']
+#For quick testing puropses
+#symbols = ['BTCUSD', 'ETHUSD', 'BCHUSD', 'XRPUSD', 'LTCUSD']
 
 if len(symbols) == 0:
 	symbols = [sym.name for sym in mt5.symbols_get()]
-#Need to set an update feature, timestamp for outdated EMA calcs
+#Need to set an update feature, timestamp for outdated LR calcs
 
 sample_rates = ['1min', '5min', '15min', '60min']
 
@@ -63,10 +63,10 @@ for sym in symbols:
 			#Segments for sl and tp
 			segments = [round((i * (DF_master['bid'].max()-DF_master['bid'].min())/10), digits) for i in range(1,6)]
 
-			#Sample size for EMA calcs
+			#Sample size for LinReg calcs
 			for sample in sample_rates:
 
-				#Clean Dataframe and set 1 minute EMA calculations
+				#Clean Dataframe and set 1 minute LinReg calculations
 				DF = DF_master.copy()
 				DF = DF.drop(['volume', 'last', 'time_msc', 'flags', 'volume_real'], axis=1) #Need to set as definition
 				DF.index = pd.to_datetime(DF['time'], unit='s')
@@ -87,7 +87,7 @@ for sym in symbols:
 				DF = DF_2.combine_first(DF_1min)
 				DF = DF.round(digits)
 
-				#Level 2 DataFrame and and set 1 minute EMA calculations
+				#Level 2 DataFrame and and set 1 minute LinReg calculations
 				DF_L2 = DF_L2_master.copy()
 				DF_L2 = DF_L2.drop(['volume', 'last', 'time_msc', 'flags', 'volume_real'], axis=1) #Need to set as definition
 				DF_L2.index = pd.to_datetime(DF_L2['time'], unit='s')
@@ -112,7 +112,7 @@ for sym in symbols:
 
 			print (sym)
 
-			#EMA and Segment calculations
+			#LinReg and Segment calculations
 			for LinReg in range(2,10):
 				for seg in segments:
 					for sample in sample_rates:
