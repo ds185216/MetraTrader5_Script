@@ -105,18 +105,20 @@ while True:
 			else:
 				print ('empty dataframe')
 
-		#Check current EMA values
-		#DataFrame cleanup
+		#Check current Linear Regression values
 		DF = pd.DataFrame(mt5.copy_ticks_from(sym, (dt.today()), 1000000, mt5.COPY_TICKS_ALL))
 		if len(DF) > 0 and sym not in open_sym:
 			seg = float(LR_Values.loc[sym]['seg'])
 			sample = LR_Values.loc[sym]['sample']
 			LinReg = LR_Values.loc[sym]['LinReg']
+			#Dataframe cleanup
 			DF.index = pd.to_datetime(DF['time'], unit='s')
 			DF = DF.drop(['volume', 'last', 'time_msc', 'flags', 'volume_real'], axis=1)
 			DF.index = pd.to_datetime(DF['time'], unit='s')
 			DF = DF.drop_duplicates(subset='time', keep="first")
 			DF = DF.resample(sample).fillna("ffill").dropna().drop('time', axis=1)
+
+			#Predict trending direction
 			if len(DF) >= LinReg:
 				y = pd.DataFrame(DF['ask'][-LinReg:])
 				X = (pd.DataFrame(range(LinReg)))
