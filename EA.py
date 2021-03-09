@@ -58,7 +58,7 @@ def open_order(buy_sell):
 			print (request)
 
 
-#Open EMA values file
+#Open LR values file
 try:
 	LR_Values = pd.read_csv('LR_Values.csv')
 	LR_Values = LR_Values.sort_values(by=['max_cash'], ascending=False)
@@ -66,7 +66,7 @@ try:
 	LR_Values = LR_Values.drop(['Unnamed: 0'], axis=1)
 	symbols = LR_Values.index
 except:
-	print ('No LR_Values.csv found, run calc_ema prior to running the Expert Advisor')
+	print ('No LR_Values.csv found, run calc_ML_LinReg prior to running the Expert Advisor')
 
 #Set percentage of balance when placing orders
 percent = 10
