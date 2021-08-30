@@ -128,9 +128,9 @@ while True:
 
 				#Qualify for Buy/Sell
 				if pred_B > pred_A:
-					open_order('Buy')
+					open_order(mt5.ORDER_TYPE_BUY)
 					break
 
 				elif pred_B < pred_A:
-					open_order('Sell')
+					open_order(mt5.ORDER_TYPE_SELL)
 					break
