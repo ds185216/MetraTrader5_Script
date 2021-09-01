@@ -20,42 +20,44 @@ def open_order(buy_sell):
 		if buy_sell == 'Buy':
 			order_type = mt5.ORDER_TYPE_BUY
 			sl = round(bid - seg, mt5.symbol_info(sym).digits)
-			tp = round(ask + seg, mt5.symbol_info(sym).digits)
+			tp = round(bid + seg, mt5.symbol_info(sym).digits)
 		elif buy_sell == 'Sell':
 			order_type = mt5.ORDER_TYPE_SELL
-			sl = round(ask + seg, mt5.symbol_info(sym).digits)
+			sl = round(bid + seg, mt5.symbol_info(sym).digits)
 			tp = round(bid - seg, mt5.symbol_info(sym).digits)
+
+
 		volume = round(int(((mt5.account_info().balance/100)*percent)/bid/mt5.symbol_info(sym).volume_step)*mt5.symbol_info(sym).volume_step, mt5.symbol_info(sym).digits)
 		if volume > mt5.symbol_info(sym).volume_max:
 			volume = mt5.symbol_info(sym).volume_max
-		#if volume < mt5.symbol_info(sym).volume_min:
-		#	symbols = symbols.delete(sym)
-		#	print ('symbol removed')
-		request = {
-			"action": mt5.TRADE_ACTION_DEAL,
-			"symbol": sym,
-			"volume": volume,
-			"type": order_type,
-			"price": bid,
-			"sl": sl,
-			"tp": tp,
-			"deviation": 0,
-			"magic": 0,
-			"comment": "Python script",
-			"type_time": mt5.ORDER_TIME_GTC,
-			"type_filling": mt5.ORDER_FILLING_IOC,
-		}
-		result = mt5.order_send(request)
-		if result.retcode == 10009:
-			print (buy_sell, sym)
-		elif result.retcode == 10016:
-			print ('invalid stops', buy_sell, 'Seg:', seg, 'Ask:', ask)
-			print (request)
-		elif result.retcode == 10014:
-			print (sym, 'min/max error')
-		else:
-			print (buy_sell, 'Error:', result.retcode)
-			print (request)
+
+		volume = 1.00
+
+		target = 0
+		sl_count = 0
+		while target != 10009:
+			request = {
+				"action": mt5.TRADE_ACTION_DEAL,
+				"symbol": sym,
+				"volume": volume,
+				"type": order_type,
+				"price": bid,
+				"sl": sl,
+				"tp": tp,
+				"deviation": 0,
+				"magic": 0,
+				"comment": "Python script",
+				"type_time": mt5.ORDER_TIME_GTC,
+				"type_filling": mt5.ORDER_FILLING_IOC,
+			}
+			result = mt5.order_send(request)
+			if result.retcode == 10016:
+				sl += mt5.symbol_info(sym).point
+				sl_count +=1
+				if sl_count == 100:
+					target = 10009
+			target = result.retcode
+		print (result.comment, buy_sell, sym)
 
 
 #Open EMA values file
@@ -86,12 +88,9 @@ while True:
 			if len(DF) > 0:
 				if order.type == 0:
 					change_sl = round(DF['bid'].max() - float(LR_Values.loc[order.symbol]['seg']), mt5.symbol_info(order.symbol).digits)
-					#if order.profit > 0 and change_sl < order.price_open + mt5.symbol_info(sym).point:
-					#	change_sl = order.price_open + mt5.symbol_info(sym).point
 				if order.type == 1:
 					change_sl = round(DF['bid'].min() + float(LR_Values.loc[order.symbol]['seg']), mt5.symbol_info(order.symbol).digits)
-					#if order.profit > 0 and change_sl > order.price_open - mt5.symbol_info(sym).point:
-					#	change_sl = order.price_open - mt5.symbol_info(sym).point
+
 				#Change sl
 				request = {
 					"action": mt5.TRADE_ACTION_SLTP,
@@ -99,11 +98,11 @@ while True:
 					"tp" : order.tp,
 					"sl" : change_sl,
 					}
-				result = mt5.order_send(request)
-				if result.retcode == 10009:
+				change = mt5.order_send(request)
+				if change.retcode == 10009:
 					print (order.symbol, 'sl changed', change_sl)
-			else:
-				print ('empty dataframe')
+			#else:
+			#	print ('empty dataframe')   #While it timeouts a bit, doesnt take long to kick back in
 
 		#Check current EMA values
 		#DataFrame cleanup
@@ -128,9 +127,9 @@ while True:
 
 				#Qualify for Buy/Sell
 				if pred_B > pred_A:
-					open_order(mt5.ORDER_TYPE_BUY)
+					open_order('Buy')
 					break
 
 				elif pred_B < pred_A:
-					open_order(mt5.ORDER_TYPE_SELL)
+					open_order("Sell")
 					break
