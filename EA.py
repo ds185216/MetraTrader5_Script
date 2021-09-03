@@ -101,8 +101,6 @@ while True:
 				change = mt5.order_send(request)
 				if change.retcode == 10009:
 					print (order.symbol, 'sl changed', change_sl)
-			#else:
-			#	print ('empty dataframe')   #While it timeouts a bit, doesnt take long to kick back in
 
 		#Check current EMA values
 		#DataFrame cleanup
