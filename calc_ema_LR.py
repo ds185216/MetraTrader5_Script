@@ -7,11 +7,11 @@ from sklearn.linear_model import LinearRegression
 
 #open LR_values if exists
 try:
-	EMA_Values = pd.read_csv('LR_Values.csv')
-	EMA_Values.index = EMA_Values['Unnamed: 0']
-	EMA_Values = EMA_Values.drop(['Unnamed: 0'], axis=1)
+	LinReg_Values = pd.read_csv('LR_Values.csv')
+	LinReg_Values.index = LinReg_Values['Unnamed: 0']
+	LinReg_Values = LinReg_Values.drop(['Unnamed: 0'], axis=1)
 except:
-	EMA_Values = pd.DataFrame(columns=['LinReg','sample', 'seg','max_cash'])
+	LinReg_Values = pd.DataFrame(columns=['LinReg','sample', 'seg','max_cash'])
 
 
 mt5.initialize()
@@ -21,7 +21,7 @@ symbols = [sym.name for sym in mt5.symbols_get()] #revert later
 
 if len(symbols) == 0:
 	symbols = [sym.name for sym in mt5.symbols_get()]
-#Need to set an update feature, timestamp for outdated EMA calcs
+#Need to set an update feature, timestamp for outdated LinReg calcs
 
 sample_rates = ['1min', '5min', '15min', '60min']
 
@@ -60,10 +60,10 @@ for sym in symbols:
 			#Segments for sl and tp
 			segments = [round((i * (DF_master['bid'].max()-DF_master['bid'].min())/10), digits) for i in range(1,6)]
 
-			#Sample size for EMA calcs
+			#Sample size for LinReg calcs
 			for sample in sample_rates:
 
-				#Clean Dataframe and set 1 minute EMA calculations
+				#Clean Dataframe and set 1 minute LinReg calculations
 				DF = DF_master.copy()
 				DF = DF.drop(['volume', 'last', 'time_msc', 'flags', 'volume_real'], axis=1) #Need to set as definition
 				DF.index = pd.to_datetime(DF['time'], unit='s')
@@ -84,7 +84,7 @@ for sym in symbols:
 				DF = DF_2.combine_first(DF_1min)
 				DF = DF.round(digits)
 
-				#Level 2 DataFrame and and set 1 minute EMA calculations
+				#Level 2 DataFrame and and set 1 minute LinReg calculations
 				DF_L2 = DF_L2_master.copy()
 				DF_L2 = DF_L2.drop(['volume', 'last', 'time_msc', 'flags', 'volume_real'], axis=1) #Need to set as definition
 				DF_L2.index = pd.to_datetime(DF_L2['time'], unit='s')
@@ -109,7 +109,7 @@ for sym in symbols:
 
 			print (sym)
 
-			#EMA and Segment calculations
+			#LinReg and Segment calculations
 			for LinReg in range(2,10):
 				for seg in segments:
 					for sample in sample_rates:
@@ -183,12 +183,12 @@ for sym in symbols:
 					else:
 						break
 
-				#write EMA_Values
+				#write LinReg_Values
 				if cash > 1000.00 and (level_2['cash']/1000) * cash > max_cash:
 					max_cash = (level_2['cash']/1000) * cash
 					print ('Value found', sym, 'LinReg:', LinReg, 'sample rate:', sample, 'TP and SL segments:', seg, '2 day simulated cash:', max_cash)
-					EMA_Values.loc[sym] = {'LinReg' : LinReg, 'sample' : sample, 'seg' : seg, 'max_cash' : max_cash}
-					EMA_Values.to_csv('LR_Values.csv')
+					LinReg_Values.loc[sym] = {'LinReg' : LinReg, 'sample' : sample, 'seg' : seg, 'max_cash' : max_cash}
+					LinReg_Values.to_csv('LR_Values.csv')
 			break
 		if backdate == 30:
 			break
