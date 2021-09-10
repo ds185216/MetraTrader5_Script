@@ -11,8 +11,7 @@ from sklearn.linear_model import LinearRegression
 
 def open_order(buy_sell):
 	global symbols
-	bid = round(mt5.symbol_info(sym).bid, mt5.symbol_info(sym).digits)
-	ask = round(mt5.symbol_info(sym).ask, mt5.symbol_info(sym).digits)
+	bid = round(mt5.symbol_info(sym).bid, mt5.symbol_info(sym).digits) #Test to see prices exist
 	if bid == 0:
 		DF = pd.DataFrame(mt5.copy_ticks_from(sym, (dt.today()), 1, mt5.COPY_TICKS_ALL))
 		if len (DF) > 0:
@@ -20,12 +19,12 @@ def open_order(buy_sell):
 	if bid > 0:
 		if buy_sell == 'Buy':
 			order_type = mt5.ORDER_TYPE_BUY
-			sl = round(bid - seg, mt5.symbol_info(sym).digits)
-			tp = round(ask + seg, mt5.symbol_info(sym).digits)
+			sl = round(mt5.symbol_info(sym).bid - seg, mt5.symbol_info(sym).digits)
+			tp = round(mt5.symbol_info(sym).ask + seg, mt5.symbol_info(sym).digits)
 		elif buy_sell == 'Sell':
 			order_type = mt5.ORDER_TYPE_SELL
-			sl = round(bid + seg, mt5.symbol_info(sym).digits)
-			tp = round(ask - seg, mt5.symbol_info(sym).digits)
+			sl = round(mt5.symbol_info(sym).bid + seg, mt5.symbol_info(sym).digits)
+			tp = round(mt5.symbol_info(sym).ask - seg, mt5.symbol_info(sym).digits)
 
 
 		volume = round(int(((mt5.account_info().balance/100)*percent)/bid/mt5.symbol_info(sym).volume_step)*mt5.symbol_info(sym).volume_step, mt5.symbol_info(sym).digits)
