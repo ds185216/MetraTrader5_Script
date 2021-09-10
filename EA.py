@@ -10,6 +10,7 @@ from sklearn.linear_model import LinearRegression
 
 
 def open_order(buy_sell):
+	global symbols
 	bid = round(mt5.symbol_info(sym).bid, mt5.symbol_info(sym).digits)
 	ask = round(mt5.symbol_info(sym).ask, mt5.symbol_info(sym).digits)
 	if bid == 0:
@@ -20,18 +21,16 @@ def open_order(buy_sell):
 		if buy_sell == 'Buy':
 			order_type = mt5.ORDER_TYPE_BUY
 			sl = round(bid - seg, mt5.symbol_info(sym).digits)
-			tp = round(bid + seg, mt5.symbol_info(sym).digits)
+			tp = round(ask + seg, mt5.symbol_info(sym).digits)
 		elif buy_sell == 'Sell':
 			order_type = mt5.ORDER_TYPE_SELL
 			sl = round(bid + seg, mt5.symbol_info(sym).digits)
-			tp = round(bid - seg, mt5.symbol_info(sym).digits)
+			tp = round(ask - seg, mt5.symbol_info(sym).digits)
 
 
 		volume = round(int(((mt5.account_info().balance/100)*percent)/bid/mt5.symbol_info(sym).volume_step)*mt5.symbol_info(sym).volume_step, mt5.symbol_info(sym).digits)
 		if volume > mt5.symbol_info(sym).volume_max:
 			volume = mt5.symbol_info(sym).volume_max
-
-		volume = 1.00
 
 		target = 0
 		sl_count = 0
@@ -51,24 +50,24 @@ def open_order(buy_sell):
 				"type_filling": mt5.ORDER_FILLING_IOC,
 			}
 			result = mt5.order_send(request)
-			if result.retcode == 10016:
-				sl += mt5.symbol_info(sym).point
-				sl_count +=1
-				if sl_count == 100:
-					target = 10009
+			if result.retcode != 10009:
+				if sym in symbols:
+					symbols = symbols.drop(sym) #Using this for the moment until a sl formula can be found.
+				else:
+					break
 			target = result.retcode
-		print (result.comment, buy_sell, sym)
+			print (result.comment, buy_sell, sym)
 
 
 #Open EMA values file
 try:
-	LR_Values = pd.read_csv('LR_Values.csv')
-	LR_Values = LR_Values.sort_values(by=['max_cash'], ascending=False)
-	LR_Values.index = LR_Values['Unnamed: 0']
-	LR_Values = LR_Values.drop(['Unnamed: 0'], axis=1)
-	symbols = LR_Values.index
+	LR_Values = pd.read_csv('LR_Values.csv', index_col=0)
 except:
 	print ('No LR_Values.csv found, run calc_ema prior to running the Expert Advisor')
+
+LR_Values = LR_Values.sort_values(by=['max_cash'], ascending=False)
+symbols = LR_Values.index
+
 
 #Set percentage of balance when placing orders
 percent = 10
