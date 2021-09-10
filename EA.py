@@ -52,7 +52,7 @@ def open_order(buy_sell):
 			result = mt5.order_send(request)
 			if result.retcode != 10009:
 				if sym in symbols:
-					symbols = symbols.drop(sym) #Using this for the moment until a sl formula can be found.
+					symbols = symbols.drop(sym) #Using this for the moment until a sl formula and other bug fixes can be found.
 				else:
 					break
 			target = result.retcode
