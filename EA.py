@@ -21,10 +21,14 @@ def open_order(buy_sell):
 			order_type = mt5.ORDER_TYPE_BUY
 			sl = round(mt5.symbol_info(sym).bid - seg, mt5.symbol_info(sym).digits)
 			tp = round(mt5.symbol_info(sym).ask + seg, mt5.symbol_info(sym).digits)
+			if mt5.symbol_info(sym).bid > tp:
+				tp = mt5.symbol_info(sym).bid + mt5.symbol_info(sym).point #Fix for tp less than bid price
 		elif buy_sell == 'Sell':
 			order_type = mt5.ORDER_TYPE_SELL
 			sl = round(mt5.symbol_info(sym).bid + seg, mt5.symbol_info(sym).digits)
 			tp = round(mt5.symbol_info(sym).ask - seg, mt5.symbol_info(sym).digits)
+			if mt5.symbol_info(sym).bid < tp: 
+				tp = mt5.symbol_info(sym).bid - mt5.symbol_info(sym).point #Fix for tp less than bid price
 
 
 		volume = round(int(((mt5.account_info().balance/100)*percent)/bid/mt5.symbol_info(sym).volume_step)*mt5.symbol_info(sym).volume_step, mt5.symbol_info(sym).digits)
@@ -102,8 +106,8 @@ while True:
 
 		#Check current EMA values
 		#DataFrame cleanup
-		DF = pd.DataFrame(mt5.copy_ticks_from(sym, (dt.today()), 1000000, mt5.COPY_TICKS_ALL))
-		if len(DF) > 0 and sym not in open_sym:
+		DF = pd.DataFrame(mt5.copy_ticks_from(sym, (dt.today()), 1000000, mt5.COPY_TICKS_ALL)) #Need to do a final simulation test to verify correct LR_Values
+		if len(DF) > 0 and sym not in open_sym and len(open_sym) < (100/percent):
 			seg = float(LR_Values.loc[sym]['seg'])
 			sample = LR_Values.loc[sym]['sample']
 			LinReg = LR_Values.loc[sym]['LinReg']

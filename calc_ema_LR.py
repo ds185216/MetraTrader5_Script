@@ -7,9 +7,7 @@ from sklearn.linear_model import LinearRegression
 
 #open LR_values if exists
 try:
-	LinReg_Values = pd.read_csv('LR_Values.csv')
-	LinReg_Values.index = LinReg_Values['Unnamed: 0']
-	LinReg_Values = LinReg_Values.drop(['Unnamed: 0'], axis=1)
+	LinReg = pd.read_csv('LR_Values.csv', index_col=0)
 except:
 	LinReg_Values = pd.DataFrame(columns=['LinReg','sample', 'seg','max_cash'])
 
