@@ -5,9 +5,8 @@ import datetime
 from datetime import datetime as dt
 from sklearn.linear_model import LinearRegression
 
-#Need to know VOLUME amount
-#Need to know: Leverage and how it works
-
+#Need to check sl and TP on open orders.
+#Some have mysteriously dissapeared on orders
 
 def open_order(buy_sell):
 	global symbols
@@ -34,6 +33,7 @@ def open_order(buy_sell):
 		volume = round(int(((mt5.account_info().balance/100)*percent)/bid/mt5.symbol_info(sym).volume_step)*mt5.symbol_info(sym).volume_step, mt5.symbol_info(sym).digits)
 		if volume > mt5.symbol_info(sym).volume_max:
 			volume = mt5.symbol_info(sym).volume_max
+			#Need to know better volume amount with leverage and margins
 
 		target = 0
 		sl_count = 0
@@ -68,6 +68,7 @@ try:
 except:
 	print ('No LR_Values.csv found, run calc_ema prior to running the Expert Advisor')
 
+#Sort values to highest cash return
 LR_Values = LR_Values.sort_values(by=['max_cash'], ascending=False)
 symbols = LR_Values.index
 

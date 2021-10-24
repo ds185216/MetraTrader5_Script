@@ -15,11 +15,8 @@ except:
 mt5.initialize()
 
 #Get all symbols
-symbols = [sym.name for sym in mt5.symbols_get()] #revert later
-
-if len(symbols) == 0:
-	symbols = [sym.name for sym in mt5.symbols_get()]
-#Need to set an update feature, timestamp for outdated LinReg calcs
+symbols = [sym.name for sym in mt5.symbols_get()]
+#Need to set an update feature, timestamp for outdated symbols
 
 sample_rates = ['1min', '5min', '15min', '60min']
 
